@@ -1,0 +1,261 @@
+\pdfminorversion=7
+\documentclass[final,5p,times,twocolumn,number]{elsarticle}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\setlength{\textwidth}{484.246pt}
+\setlength{\oddsidemargin}{-15.639pt}
+\setlength{\evensidemargin}{-15.639pt}
+
+\makeatletter
+\def\ps@pprintTitle{%
+  \let\@oddhead\@empty \let\@evenhead\@empty
+  \let\@oddfoot\@empty \let\@evenfoot\@oddfoot
+}
+\makeatother
+
+\usepackage{booktabs}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{{figures/}{../figures/}{./}}
+\usepackage{flushend}
+\usepackage{stfloats}
+\usepackage{hyperref}
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.85}
+\setlength{\dblfloatsep}{20pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{30pt plus 2pt minus 2pt}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\urlstyle{rm}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\secref}[1]{\hyperref[#1]{Section~\ref*{#1}}}
+\newcommand{\figref}[1]{\hyperref[#1]{Figure~\ref*{#1}}}
+
+\makeatletter
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
+           {12\p@ \@plus 6\p@ \@minus 3\p@}%
+           {3\p@ \@plus 6\p@ \@minus 3\p@}%
+           {\normalfont\normalsize\bfseries}}
+\makeatother
+
+\journal{arXiv}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{PaxosLease with Moving Participants}
+
+\author{M\'arton Trencs\'eni (\code{mtrencseni@gmail.com})}
+
+\begin{abstract}
+PaxosLease grants one process the exclusive right to act as owner for a bounded time, and its safety property says that at any time at most one process holds that right.  The words ``at any time'' assume that all participants agree on which events happen together.  For participants in relative motion they do not.  This note restates the property so that it does not depend on a choice of frame, and shows what the protocol costs once it is restated.  The structure of the protocol is unchanged.  Two timing rules acquire one factor of the relativistic Doppler factor $k = \sqrt{(1+\beta)/(1-\beta)}$, which stretches the intervals between the ticks one participant sees on another's clock, so the observed rate is $1/k$.  Everything else in PaxosLease is message causality, which already respects the light cone.  The correction is invisible over short leases and large over the long leases that light travel time forces on deep-space deployments.
+\end{abstract}
+
+\end{frontmatter}
+
+\section{Introduction}\label{sec:intro}
+
+PaxosLease \cite{ref1,ref2} guarantees that at any time at most one proposer holds the lease.  The words ``at any time'' carry an assumption: that all participants agree on which events happen together.  For participants at rest with respect to one another it holds: they agree on which events are simultaneous, their clocks differ by an offset, and the protocol's clock-drift bound covers the rest.  For participants in relative motion it is false.  Two observers moving with respect to each other slice spacetime into ``now'' differently, and a lease expiry that precedes an activation for one of them can follow it for the other.
+
+This note asks what changes.  The protocol does not; the safety property does.  Two constants change: the containment rule and the quarantine rule each acquire one factor of
+\[
+  k = \sqrt{\frac{1+\beta}{1-\beta}},
+\]
+the relativistic Doppler factor, where $\beta$ is the relative speed as a fraction of the speed of light.  Ballots and quorum intersection are statements about which message caused which, and every observer agrees on causal order.
+
+The safety property has to be restated, and the restatement is the useful part.  A lease protects something.  That something has a definite path through spacetime, and the guarantee worth having is that no two owners ever command it along that path.  That statement holds for every observer, and it is what an operator wanted.
+
+We assume the reader knows PaxosLease and has met special relativity once.  Every relativistic idea used here is reintroduced where it is first needed.
+
+\section{An ancient relay}\label{sec:setting}
+
+Consider a relay in deep space, built long ago and still running.  It accepts commands and executes them.  It has no notion of who is entitled to command it, no way to reject a stale instruction, and no way to arbitrate between two senders.  It is a device that does what it is told.
+
+Several probes pass the relay on different trajectories at high speed.  They want to reconfigure it, and two probes commanding it at once would leave it in a state neither intended.  Since the relay cannot arbitrate, the probes must arbitrate among themselves: they run PaxosLease, and the winner alone commands the relay until its lease expires.
+
+This is the whole setting.  It supplies three things that a terrestrial deployment does not.  The protected resource is a single device at a single place, so it has one definite path through spacetime.  The participants move fast with respect to it and with respect to one another.  And the distances are large enough that a signal takes a long time to cross them, which turns out to matter more than the speeds do.
+
+A word on the protocol, since the rest depends on its shape.  Proposers compete for the lease; acceptors grant it.  A proposer picks a ballot number larger than any it has used, sends \code{Prepare} to every acceptor, and collects promises from a majority.  If none of them reports a live lease it sends \code{Accept}, and on acceptances from a majority it becomes the owner for $D_P$ on its own clock.  An acceptor that accepts refuses conflicting grants for $D_A$ on its clock.  Acceptors keep this state in memory alone, so one that restarts has forgotten what it promised and stays silent for a quarantine $Q$ before voting again.  Two majorities always share a member, and that shared acceptor is what stops two proposers owning the lease at once.
+
+A \emph{worldline} is the path an object traces through spacetime: where it is, at every moment of its own existence.  The relay has one, the probes have one each, and a diagram with position across and time up shows them as curves.  A vertical line is an object at rest in the frame of the diagram; a tilted line is an object moving; the faster it moves, the more the line tilts.  No line may tilt past the diagonal, because nothing outstrips light.
+
+\emph{Proper time} is what a clock carried along a worldline reads.  It is the only time a participant has direct access to.  When a probe holds a lease for seven seconds, those seconds are its own.
+
+Throughout, $D_P$ is the proposer's lease duration and $D_A$ is the acceptor's exclusion duration, both measured as proper time on the clock of the participant that uses them, and $Q$ is the restart quarantine.  We write $\beta$ for a relative speed as a fraction of the speed of light $c$, and $\gamma = 1/\sqrt{1-\beta^2}$ for the Lorentz factor.
+
+\section{What ``at most one at a time'' means}\label{sec:exclusion}
+
+Start with the piece of relativity the protocol actually depends on.
+
+A \emph{frame} is one observer's point of view: a state of motion, with clocks and rulers at rest in it, against which positions and times are recorded.  Every observer has one, and none is preferred.
+
+The \emph{light cone} of an event is the set of events that light, leaving that event, could reach.  Its \emph{future} cone is what the event can still affect; its \emph{past} cone is what could have affected it.  Nothing travels faster, so the light cone marks the limit of influence: an event can affect only what lies inside its future cone.  Two events are \emph{spacelike separated} when neither lies in the other's cone.  No signal connects them, neither caused the other, and, crucially, different observers disagree about their order.
+
+That disagreement is the \emph{relativity of simultaneity}.  Each observer carries a notion of ``all the events happening now'', and that slice through spacetime tilts with the observer's motion.  Two observers moving differently draw different slices.  For events that are causally connected, every slice agrees on the order; for spacelike separated events, the order depends on who is asked.
+
+\subsection{The station master}
+
+Two trains pass a station that has one telegraph key.  A train may hold the key for seven seconds, timed on the clock in its own cab.  The station master, who must not let the next train touch the key too early, watches the receding train's clock through a telescope.
+
+He sees it tick slow.  Seven seconds in the cab take longer than seven seconds at the station, and the factor is $k$.  So the master waits $7k$ seconds, not seven.  He needs no theory to work this out; he reads the clock he can see.
+
+\subsection{Two ledgers}
+
+Now suppose each train's dispatcher keeps a ledger of who held the key and when, written with the train's own clock and its own notion of now.
+
+Train A's ledger says A released the key before B acquired it.  Train B's ledger says B acquired it first.  Neither ledger is wrong.  The two events, A's expiry and B's activation, are far apart in space and close together in time, which makes them spacelike separated, and the two dispatchers slice ``now'' differently.
+
+Meanwhile the key received A's last command, and then B's first.  Both commands arrived at the key, and arrivals at one place, on one worldline, happen in one order that every observer agrees on.
+
+\figref{fig:ledgers} draws this.  So there are two different statements available:
+
+\begin{quote}
+\emph{At most one leader at any time.}  A claim about ledgers.\\
+\emph{The key never served two masters.}  A claim about the key.
+\end{quote}
+
+The second is the one an operator can check, and the one the relay's behaviour depends on.
+
+\subsection{Two invariant repairs}
+
+The first statement can be repaired in two ways.
+
+\emph{Causal exclusion} requires that the earlier owner's expiry lie in the causal past of the later owner's activation: a light signal leaving the first event could reach the second.  Every observer then agrees the expiry came first, because causally connected events keep their order in every frame.  This is resource-independent, and it is the strong option.
+
+\emph{Resource exclusion} requires that at most one owner is authorised at each point of the resource's worldline.  This is also frame-independent, since it is a statement about proper time on one clock.  It is weaker, and it is tied to one resource.
+
+The two are related, once we say what it means to be authorised at a point of the resource's worldline.  Simultaneity is not available for that, so use causality: an owner is authorised at a resource event $R$ when $R$ lies in the future cone of that owner's activation and outside the future cone of its expiry.  With that definition, causal exclusion holds exactly when resource exclusion holds for every possible resource worldline.  Exclusion on one chosen time axis gives neither property.
+
+Causal exclusion also settles the commands, which is what the relay actually experiences.  A command is a separate event, sent at some moment of an owner's interval and arriving later.  If the old owner's expiry lies in the causal past of the new owner's activation, every command the old owner sent arrives before every command the new owner sends, because light leaving the earlier event reaches the relay's worldline no later than light leaving the later one.  For commands traveling at the speed of light, ordering the intervals orders the arrivals.
+
+For the ancient relay the choice is forced.  Resource exclusion would normally be enforced at the resource, by rejecting commands from a superseded owner; the relay cannot reject anything.  So the probes must establish causal exclusion by timing alone, and \secref{sec:rules} gives the condition.
+
+\section{The two rules that change}\label{sec:rules}
+
+\subsection{What an acceptor sees}
+
+In a given inertial frame, a moving clock accumulates $1/\gamma$ seconds for every second of that frame's coordinate time.  That is time dilation, and it is second order in $\beta$: at a tenth of light speed it costs about half a percent.
+
+An observer sees more than dilation.  If the clock is also receding, each successive tick is emitted from farther away and takes longer to arrive, so the ticks arrive further apart than dilation alone accounts for.  The two effects compose.  For a clock receding at $\beta$, the interval between arriving ticks is stretched by
+\[
+  k = \gamma\,(1+\beta) = \sqrt{\frac{1+\beta}{1-\beta}}\,,
+\]
+the relativistic Doppler factor.  This is the quantity the station master measured with his telescope, and it is first order in $\beta$: at a tenth of light speed it is about eleven percent, twenty times the dilation alone.
+
+One convention matters.  $k$ stretches the \emph{intervals} between ticks, so the observed \emph{rate} is $1/k$.  And $k$ is a property of a pair of participants, not of one: it is built from their relative speed.
+
+\subsection{Containment and quarantine}
+
+The protocol's containment rule requires an owner's authority to end before the exclusion of every acceptor that granted it.  The owner measures $D_P$ on its own clock; the acceptor measures $D_A$ on its own.  Since the acceptor sees the owner's clock stretched by $k$, the rule becomes
+\[
+  D_P \leq D_A / k .
+\]
+The quarantine rule, which keeps a restarted acceptor silent long enough that nothing it forgot can still be used, becomes
+\[
+  Q \geq k\,D_P .
+\]
+The parent's implemented variant, which must also outlast a retry timeout $R$, becomes $Q \geq k\max(D_P, R)$.
+
+\figref{fig:kstretch} shows why one factor of $k$ appears and no more.  Put the acceptor at rest at the origin and let the proposer recede.  In PaxosLease the proposer starts this timer when it broadcasts its \code{Prepare}, before it owns anything, and the attempt dies when the timer runs out.  Those two endpoints are separated by $D_P$ of the proposer's own proper time.  Light from each travels to the acceptor, and because the second endpoint is farther away its light takes longer, so the arrivals are separated by $kD_P$.
+
+The order matters here.  An acceptor cannot begin excluding before the \code{Prepare} reaches it, so the start of $D_A$ never precedes the arrival of the timer's first endpoint.  Requiring $D_A \geq kD_P$ then places the end of the exclusion after the arrival of the expiry, which is what containment needs.  Had the timer started when the proposer activated, after the acceptor had already replied, that ordering would not be available and the rule would fail.  This is why the parent protocol starts the timer at \code{Prepare}.
+
+The separation the two participants already had delays both arrivals equally and drops out.  What remains is the extra distance the proposer covers during $D_P$, and that is what turns $\gamma$ into $k$.  The condition does not depend on how far apart the participants are, which lets a probe hold a lease without knowing where anyone else is.
+
+\subsection{Relativity is cheaper than drift}
+
+An engineer who had never met relativity might reach for the drift bound the protocol already has.  Clocks drift, the protocol tolerates a rate error of $\rho$ on each side, and the containment condition for drift puts both clocks at their worst extremes at once.  Setting $\rho = \beta$, which matches the rate error to first order, gives a required ratio of
+\[
+  \frac{1+\rho}{1-\rho} = k^2 .
+\]
+Relative motion costs one factor of $k$; feeding it into the drift formula costs two.  Calibrating $\rho$ to $\beta$ this way is a choice rather than a derivation, but it is the natural one for an engineer with only the drift bound to hand, and it is more conservative than necessary by a factor of $k$, twenty-two percent at a fifth of light speed.  The drift formula lets both clocks err in the worst direction at once.  Relative motion has no two-sided case: each participant sees the other's clock stretched by the same $k$.
+
+\section{How large is the correction}\label{sec:numbers}
+
+The error in a lease is $(k-1)D_P$, and for small $\beta$ we have $k - 1 \approx \beta$.  That is small.  What makes it matter is $D_P$.
+
+A lease has to be long enough for the protocol to complete a round, and in deep space a round takes as long as light takes to cross the distance.  A probe near Voyager's distance is more than twenty hours of light travel from Earth, so its lease cannot be measured in seconds.  Long leases multiply a tiny $\beta$ into a large absolute error.
+
+\begin{table}[tbp]
+\centering
+\small
+\begin{tabular}{llrr}
+\toprule
+\textbf{Case} & \textbf{$\beta$} & \textbf{Lease} & \textbf{Error} \\
+\midrule
+Low orbit, 7.5\,km/s        & $2.5\times10^{-5}$ & 7\,s & 0.18\,ms \\
+Cruise, 30\,km/s            & $1.0\times10^{-4}$ & 7\,s & 0.70\,ms \\
+Cruise, 30\,km/s            & $1.0\times10^{-4}$ & 1\,h & 0.36\,s \\
+Deep space, 47\,km/s        & $1.57\times10^{-4}$ & 4\,d & 54\,s \\
+Lightsail                   & $0.1$              & 7\,s & 0.74\,s \\
+Lightsail                   & $0.2$              & 7\,s & 1.57\,s \\
+\bottomrule
+\end{tabular}
+\caption{\label{tab:numbers}The correction $(k-1)D_P$.  Each speed is the speed of one participant relative to another, not relative to the Sun or the Earth; a fleet flying in formation has a small pairwise speed however fast it travels.  The 47\,km/s row is a probe receding from a station that is itself moving, which is the order of magnitude an outbound mission reaches against an Earth-bound peer.  Short leases hide the effect at any achievable speed.  Long leases, which deep space forces, do not.}
+\end{table}
+
+\hyperref[tab:numbers]{Table~\ref*{tab:numbers}} gives the arithmetic.  At orbital speeds and second-scale leases the correction is a fraction of a millisecond and no deployment would notice.  At the same speeds with the leases that light travel time forces, it reaches seconds to nearly a minute.  At speeds a lightsail might reach it is large at any lease length.
+
+Note which column carries the effect.  The speeds in the last two rows are hypothetical; those in the first four are flying today.  Distance, through lease length, is what drives the correction.
+
+\section{Three remarks}\label{sec:remarks}
+
+\subsection{Approach and recession}
+
+A probe passing the relay approaches before it recedes.  The stretch depends on the speed and on the direction of travel relative to the line of sight, and it is not below one merely because the probe is getting closer: at the moment of closest approach, when the distance is momentarily unchanging, the stretch is $\gamma$, a redshift from dilation alone.  Direct recession is the worst case, so a constant chosen for the whole encounter is the recession value.  A protocol that adapted $k$ to the current geometry could do better, at the cost of needing to know the geometry.
+
+\subsection{Acceleration does not break it}
+
+A probe that manoeuvres changes frames, and its accumulated proper time diverges from everyone else's.  The stretch is then not one number but varies along the trajectory.  Each use of $k$ is a ratio between a short emitted interval and the received interval it becomes, and it depends only on the motion of the emitter at emission and of the receiver at reception.  If that instantaneous stretch never exceeds $k_{max}$ anywhere in the attempt, the arrivals are spread by at most $k_{max}D_P$, and the bounds hold for any trajectory, however curved.  The protocol never compares accumulated proper time between participants, which is what would make a changed frame fatal.
+
+\subsection{Counting pulses instead of seconds}
+
+$\beta_{max}$ must be assumed, exactly as the drift bound $\rho$ is assumed today, and a deployment that gets it wrong is unsafe in the same way as one whose clocks drift further than promised.
+
+There is an alternative for the case where the owner is alive and cooperating.  Let each probe emit a numbered pulse at every tick of its own clock, and let the lease name the pulse at which authority ends.  An acceptor counts arriving pulses.  When the numbered pulse arrives, the owner's proper-time deadline has passed.  The acceptor has watched it pass rather than computed when it would.  \figref{fig:pulses} shows the pulses bunching as the probe approaches and spreading as it recedes, with no need for the acceptor to know why.
+
+Numbered pulses also tolerate loss, since any later pulse that arrives implies the earlier deadline has passed.  This needs no velocity, no distance, and no assumption about the trajectory.  It fails in exactly the case the timer exists for, which is an owner that has stopped emitting because it crashed, so it supplements the timing rule rather than replacing it.
+
+\section{Discussion}\label{sec:discussion}
+
+The original safety property is exclusion on one chosen time axis, which is what a deployment whose participants share a frame actually wants.  What changes when participants move is that the choice of axis stops being harmless, and the property turns out to have been about ledgers rather than about the thing being protected.
+
+Two limits are worth stating.  A lease bounds when a probe is authorised, and \secref{sec:exclusion} shows that causal exclusion orders the commands as well, provided they travel at the speed of light.  A deployment whose commands are queued, relayed or retransmitted has no such bound on arrival, and against a relay that cannot reject a superseded owner it owes a separate rule about when to stop transmitting.  The treatment here is also kinematic: it assumes flat spacetime and ignores gravitation, which is defensible far from masses and not in a strong field.
+
+Rules about message order need no change, because message order is causal order.  Only the parts that compare one participant's clock against another's needed a correction, and that correction is one factor in two rules, with a plain reading: measure another participant's time at the rate you actually see it.
+
+\begin{figure*}[tbp]
+\centering
+\includegraphics[width=0.62\textwidth]{fig1.pdf}
+\caption{\label{fig:ledgers}Two ledgers, one key, drawn in the relay's frame: position across, time up, and time measured in light-seconds so that light travels on the diagonals.  A's expiry $E$ and B's activation $S$ are far apart in space and close in time, so neither lies in the other's light cone.  A's slice of ``now'' is nearly flat and places $E$ first; B's is steeply tilted and places $S$ first.  Neither is wrong.  The two commands arrive on the relay's worldline in one order, which every observer agrees on.}
+\end{figure*}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.92\columnwidth]{fig2.pdf}
+\caption{\label{fig:kstretch}Why one factor of $k$ appears.  The proposer's attempt timer runs for $D_P$ of its own proper time, from the broadcast of \code{Prepare} to the expiry.  Light from each endpoint reaches the acceptor, and since the proposer has moved farther away in between, the arrivals are spread to $kD_P$.  The separation the participants already had delays both arrivals equally and cancels; only the distance gained during $D_P$ survives.}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.92\columnwidth]{fig3.pdf}
+\caption{\label{fig:pulses}Counting pulses through an approach and a recession.  The probe's worldline curves, so it is accelerating, and it emits pulses at equal intervals of its own clock.  They arrive bunched while it approaches and spread once it recedes.  An acceptor that counts them learns when the owner's deadline passed without knowing the probe's speed or its trajectory.}
+\end{figure}
+
+\begin{thebibliography}{9}
+\itemsep0em
+\bibitem{ref1} M. Trencs\'eni, A. Gazs\'o, and H. Reinhardt. ``PaxosLease: Diskless Paxos for Leases.'' arXiv:1209.4187, 2012.
+\bibitem{ref2} M. Trencs\'eni. ``PaxosLease Revisited: A Checked Model of Diskless Distributed Leases.'' 2026. \url{https://github.com/mtrencseni/paxoslease-revisited-2026}
+\bibitem{ref3} L. Lamport. ``Time, Clocks, and the Ordering of Events in a Distributed System.'' \textit{CACM}, 21(7), 1978.
+\bibitem{ref4} H. Bondi. \textit{Relativity and Common Sense}. Doubleday, 1964.
+\bibitem{ref5} C. Gray and D. Cheriton. ``Leases: An Efficient Fault-Tolerant Mechanism for Distributed File Cache Consistency.'' \textit{SOSP}, 1989.
+\end{thebibliography}
+
+\end{document}
