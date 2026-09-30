@@ -1,5 +1,5 @@
 LATEXMK   ?= latexmk
-PYTHON    ?= python3
+PYTHON    ?= $(CURDIR)/.venv/bin/python
 BUILD     := build
 PAPER_TEX := paper/PaxosLease-Relativity.tex
 PAPER_PDF := paper/PaxosLease-Relativity.pdf
