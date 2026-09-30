@@ -2,7 +2,7 @@
 
 A short note on running PaxosLease when the participants are in relativistic
 relative motion. Companion to
-[PaxosLease Revisited](https://github.com/mtrencseni/paxoslease-revisited-2026).
+[PaxosLease Revisited](https://github.com/mtrencseni/paxoslease-revisited).
 
 The safety property of PaxosLease says that at any time at most one proposer
 holds the lease. "At any time" assumes the participants agree on which events
