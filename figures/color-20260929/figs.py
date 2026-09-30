@@ -13,13 +13,6 @@ C_AXIS= '0.55'      # the axes of the diagram's own frame
 C_OVL = '#6a1b9a'   # overlap of the two authority regions
 C_AUX = '0.45'      # light rays, construction lines
 
-# Black-and-white variant: run with BW=1 to write fig*-bw.{pdf,png} in grays.
-import os
-BW = os.environ.get('BW') == '1'
-SUF = '-bw' if BW else ''
-if BW:
-    C_OLD, C_NEW, C_ARR, C_RES, C_AXIS, C_OVL, C_AUX = 'black', '0.5', '0.3', '0.1', '0.55', '0.25', '0.45'
-
 # one style vocabulary for every figure
 LW_WORLD, LW_LEASE, LW_RAY, LW_NOW, LW_ARROW = 1.4, 2.2, 0.9, 0.9, 1.0
 MS_EVENT, MS_ARR, MS_DATE = 5.0, 4.5, 4.5
@@ -94,7 +87,7 @@ def panel(ax,rel,title):
 fig,axs=plt.subplots(1,2,figsize=(6.9,2.35))
 panel(axs[0],False,"(a)  Newtonian: one global time")
 panel(axs[1],True ,"(b)  Special relativity: $x'$ tilts with $ct'$")
-fig.tight_layout(w_pad=1.4); fig.savefig('fig1'+SUF+'.png',dpi=200); fig.savefig('fig1'+SUF+'.pdf'); plt.close(fig)
+fig.tight_layout(w_pad=1.4); fig.savefig('fig1.png',dpi=200); fig.savefig('fig1.pdf'); plt.close(fig)
 
 # ---- FIG 2: light cones, authority regions, and the three conditions ------
 fig,axs=plt.subplots(1,2,figsize=(7.0,2.75))
@@ -156,7 +149,7 @@ for src,lab,dy in ((P,'$R_P$',-.04),(Q,'$R_Q$',.04)):
     ax.plot(*arr,'s',color=C_ARR,ms=MS_ARR,zorder=7)
     ax.text(arr[0]-.50,arr[1]+dy,lab,color=C_ARR,fontsize=FS_ANNOT)
 fig.tight_layout(w_pad=1.2)
-fig.savefig('fig2'+SUF+'.png',dpi=200); fig.savefig('fig2'+SUF+'.pdf'); plt.close(fig)
+fig.savefig('fig2.png',dpi=200); fig.savefig('fig2.pdf'); plt.close(fig)
 
 # ---- FIG 3: one factor of k ----------------------------------------------
 b=0.5; g=1/np.sqrt(1-b**2); Dp=1.4; k=np.sqrt((1+b)/(1-b))
@@ -192,7 +185,7 @@ ax.annotate('',xy=(0.06,ym+0.08),xytext=(0.45,4.86),arrowprops=dict(arrowstyle='
 ax.text(p2[0]+0.12,p2[1]-0.05,'$P$',color=C_OLD,fontsize=FS_EVENT)
 ax.annotate('',xy=(0.22,a2+0.5),xytext=(0.22,a1),arrowprops=dict(arrowstyle='<->',color=C_NEW,lw=LW_ARROW))
 ax.text(0.30,2.45,'$D_A$',color=C_NEW,fontsize=FS_EVENT)
-fig.tight_layout(); fig.savefig('fig3'+SUF+'.png',dpi=200); fig.savefig('fig3'+SUF+'.pdf'); plt.close(fig)
+fig.tight_layout(); fig.savefig('fig3.png',dpi=200); fig.savefig('fig3.pdf'); plt.close(fig)
 
 # ---- FIG 2: how classical PaxosLease acquires a lease -----------------------
 # A message-sequence diagram, not a spacetime diagram: time runs up, horizontal
@@ -244,4 +237,4 @@ ax.axhspan(2.45,3.55,xmin=0.05,xmax=0.79,color=C_ARR,alpha=0.09,lw=0,zorder=0)
 ax.text(1.35,3.00,"the proposer's lease timer has expired, but\nthe acceptors' timers have not, so no other\nproposer can acquire the lease here.",
         color=C_ARR,fontsize=FS_ANNOT,ha='center',va='center',linespacing=1.4,bbox=BOX,zorder=8)
 fig.tight_layout()
-fig.savefig('figseq'+SUF+'.png',dpi=200); fig.savefig('figseq'+SUF+'.pdf'); plt.close(fig)
+fig.savefig('figseq.png',dpi=200); fig.savefig('figseq.pdf'); plt.close(fig)
