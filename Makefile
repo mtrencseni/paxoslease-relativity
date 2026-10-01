@@ -13,7 +13,7 @@ paper-source:
 	test -f $(PAPER_TEX)
 
 figures:
-	cd $(FIGDIR) && $(PYTHON) figs.py
+	cd $(FIGDIR) && $(PYTHON) figs.py && BW=1 $(PYTHON) figs.py
 
 pdf: paper-source
 	mkdir -p $(BUILD)/latex

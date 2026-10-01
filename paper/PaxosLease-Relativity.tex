@@ -105,7 +105,7 @@ This note answers two questions.  How should the safety property be stated so th
 
 This section gives a brief description of PaxosLease, the lease protocol which we will adapt to special relativity in the later sections.  The protocol reuses the machinery of Paxos, ballots and prepare/accept rounds decided by majorities.  In Paxos, participants agree on an arbitrary value, while in PaxosLease agreement is reached on who holds the lease for some limited time, with automatic expiry; unlike Paxos, PaxosLease acceptors store nothing on disk.  The full algorithm is in \cite{ref1,ref2}.  The version modified here omits the optional early release of \cite{ref2}, which the argument of \secref{sec:containment} does not cover.
 
-A proposer picks a ballot larger than any it has used and unique to it, so that no two proposers ever use the same ballot, starts a timer that expires $D_P$ later on its own clock, and sends \code{Prepare} to every acceptor.  An acceptor that answers promises to reject every smaller ballot and reports any live lease it has granted.  If a majority answer and none reports a live lease, or the only lease reported is the exact one this proposer still holds and is renewing, the proposer sends \code{Accept}.  An acceptor that accepts records the lease and reports it to any proposer that asks, until a deadline $D_A$ later on its own clock.  It will still accept a higher ballot from the same owner, which is a renewal, or from anyone once that deadline has passed, but it refuses an \code{Accept} that would replace a live lease of a different owner, for the reason given in \secref{sec:containment}.  Once a majority of acceptances reach the proposer while its timer is still running, it has \emph{acquired} the lease and is its \emph{owner} until the timer, started at \code{Prepare}, expires.  Two proposers cannot both hold the lease because any two majorities share an acceptor, and that shared acceptor either reports the live lease or has already promised a ballot high enough to stop the older attempt.  Acceptors keep promises and leases in memory only, so an acceptor that restarts has lost them, and it stays silent for a quarantine $D_Q$ before voting again.  \figref{fig:flow} shows one acquisition.
+A proposer picks a fresh ballot, never used by any proposer, including its own earlier incarnations, starts a timer that expires $D_P$ later on its own clock, and sends \code{Prepare} to every acceptor.  An acceptor that answers promises to reject every smaller ballot and reports any live lease it has granted.  If a majority answer and none reports a live lease, or the only lease reported is the exact one this proposer still holds and is renewing, the proposer sends \code{Accept}.  An acceptor that accepts records the lease and reports it to any proposer that asks, until a deadline $D_A$ later on its own clock.  It will still accept a higher ballot from the same owner, which is a renewal, or from anyone once that deadline has passed, but it refuses an \code{Accept} that would replace a live lease of a different owner, for the reason given in \secref{sec:containment}.  An owner is a proposer incarnation, as in \cite{ref2}, so a restarted proposer is a new owner.  Once a majority of acceptances reach the proposer while its timer is still running, it has \emph{acquired} the lease and is its \emph{owner} until the timer, started at \code{Prepare}, expires.  Two proposers cannot both hold the lease because any two majorities share an acceptor, and that shared acceptor either reports the live lease or has already promised a ballot high enough to stop the lower-ballot attempt.  Acceptors keep promises and leases in memory only, so an acceptor that restarts has lost them, and it stays silent for a quarantine $D_Q$ before voting again.  \figref{fig:flow} shows one acquisition.
 
 \begin{figure}[!ht]
 \centering
@@ -113,7 +113,7 @@ A proposer picks a ballot larger than any it has used and unique to it, so that 
 \caption{\label{fig:flow}One acquisition in classical PaxosLease, as a message-sequence diagram rather than a spacetime diagram.}
 \end{figure}
 
-Throughout, $D_P$ is the proposer's lease duration, $D_A$ the acceptor's exclusion duration, $D_Q$ the restart quarantine, each measured on the clock of the participant that uses it, taken as ideal until the end of \secref{sec:quarantine}\footnote{\emph{Proper time} is what an ideal clock carried along a worldline reads.  It is the only time a participant can measure directly.}   A relative speed is written $\beta$, as a fraction of the speed of light $c$.
+Throughout, $D_P$ is the proposer's lease duration, $D_A$ the acceptor's exclusion duration, $D_Q$ the restart quarantine, each measured on the clock of the participant that uses it, taken as ideal until the end of \secref{sec:quarantine}.\footnote{\emph{Proper time} is what an ideal clock carried along a worldline reads.  It is the only time a participant can measure directly.}   A relative speed is written $\beta$, as a fraction of the speed of light $c$.
 
 \section{The safety property in relativistic inertial frames}\label{sec:exclusion}
 
@@ -182,7 +182,7 @@ Take any one resource worldline $W_0$ and any one frame $S$.  Since $\mathsf{C}$
 
 \subsection{Commands and messages}
 
-Assuming messages from the lease holder to the resource travel at the speed of light and are processed in arrival order, relativistic PaxosLease honouring causal exclusion yields correct execution at the resource. The old owner sent its commands before $P$, so they arrive before light from $P$, and the new owner sends its commands at or after $Q$, so they arrive no earlier than light from $Q$.  Since $J^+(Q) \subseteq J^+(P)$, every command of the old owner arrives before any command of the new one.
+Assuming messages from the lease holder to the resource travel at the speed of light and are processed in arrival order, relativistic PaxosLease honoring causal exclusion yields correct execution at the resource.  The old owner sent its commands before $P$, so they arrive before light from $P$, and the new owner sends its commands at or after $Q$, so they arrive no earlier than light from $Q$.  Since $J^+(Q) \subseteq J^+(P)$, every command of the old owner arrives before any command of the new one.
 
 \section{PaxosLease timeouts in relativistic inertial frames}\label{sec:rules}
 In this section we will modify classical PaxosLease to achieve \emph{causal exclusion} in relativistic inertial frames by modifying timeouts, since requiring a release message before regranting would break the algorithm's liveness property.
@@ -191,7 +191,7 @@ In this section we will modify classical PaxosLease to achieve \emph{causal excl
 
 Pick a frame and watch a clock move through it at a speed $\beta$.  The moving clock accumulates $1/\gamma$ seconds for every second of the frame's own time, where $\gamma = 1/\sqrt{1-\beta^2}$ is the Lorentz factor.  Since $0 \leq \beta < 1$, $\gamma \geq 1$ and $1/\gamma \leq 1$, so the moving clock runs slow.  That is time dilation.
 
-An acceptor sees more than dilation, because it learns of each tick of the proposer's clock from the light that tick sends out, and if the proposer is receding, each successive tick is emitted from farther away.\footnote{The stretch depends on direction: $1/k$ for a proposer heading straight at the receiver, $\gamma$ at closest approach, and $k$ for direct recession, the largest, so a single bound has to use $k$.}  In the acceptor's frame the ticks are $\gamma$ seconds apart, and in those $\gamma$ seconds the proposer moves $\beta\gamma$ light-seconds farther off, so the light of each tick has that much farther to travel than the light of the tick before.  The interval between arriving ticks is therefore stretched by
+An acceptor sees more than dilation, because it learns of each tick of the proposer's clock from the light that tick sends out, and if the proposer is receding, each successive tick is emitted from farther away.\footnote{The stretch depends on direction: $1/k$ for a proposer heading straight at the receiver, $\gamma$ for a tick emitted at closest approach, and $k$ for direct recession, the largest, so a single bound has to use $k$.}  In the acceptor's frame the ticks are $\gamma$ seconds apart, and in those $\gamma$ seconds the proposer moves $\beta\gamma$ light-seconds farther off, so the light of each tick has that much farther to travel than the light of the tick before.  The interval between arriving ticks is therefore stretched by
 \[
   k = \gamma\,(1+\beta) = \sqrt{\frac{1+\beta}{1-\beta}}\,,
 \]
@@ -214,7 +214,7 @@ Ballots, quorums, messages & as in classical PaxosLease & same, without early re
 Proposer's lease timer & $D_P$ on its own clock & same \\
 Acceptor's exclusion timer & $D_A \geq D_P\frac{1+\rho_{\max}}{1-\rho_{\max}}$ & $D_A \geq k\,D_P\frac{1+\rho_{\max}}{1-\rho_{\max}}$ \\
 Acceptor's quarantine timer & $D_Q \geq D_P\frac{1+\rho_{\max}}{1-\rho_{\max}}$ & $D_Q \geq k_{\max}D_P\frac{1+\rho_{\max}}{1-\rho_{\max}}$ \\
-Assumed bounds & maximum clock rate error $\rho_{\max}$ & $\rho_{\max}$, and relative maximum speed $\beta_{\max}$ \\
+Assumed bounds & maximum clock rate error $\rho_{\max}$ & $\rho_{\max}$, and maximum relative speed $\beta_{\max}$ \\
 Acceptor uses & its own clock & same, and optionally a known bound on relative speed \\
 Acceptor disk writes & none & none \\
 \bottomrule
@@ -233,7 +233,7 @@ Nothing in the resulting rule depends on how far apart the participants are.
 
 Causal exclusion follows from the containment rule, provided an acceptor also keeps the leases it has granted.
 
-\textbf{Lemma (lease retention).}  Once an acceptor has accepted a lease, and while it stays up, it reports a live lease of that lease's owner at least until its exclusion for that lease ends, which by the containment rule is after light from the lease's expiry has reached it.  Three rules guarantee this.  First, an acceptor never replaces a live lease of a different owner, even under a higher ballot, the acceptor-side rule of \cite{ref2}.  Second, an \code{Accept} from the same owner, a renewal, may replace the record, but its new deadline is the later one, being the same duration from a later moment.  Third, there is no early release: the optional release of \cite{ref2} clears the record and would break the property.
+\textbf{Lemma (lease retention).}  Once an acceptor has accepted a lease, and while it stays up, it reports a live lease of that lease's owner at least until its exclusion for that lease ends, which by the containment rule is no earlier than when light from the lease's expiry reaches it.  Three rules guarantee this.  First, an acceptor never replaces a live lease of a different owner, even under a higher ballot, the acceptor-side rule of \cite{ref2}.  Second, an \code{Accept} from the same owner, a renewal, may replace the record, but its new deadline is the later one, being the same duration from a later moment.  Third, there is no early release: the optional release of \cite{ref2} clears the record and would break the property.
 
 \textbf{Theorem (causal exclusion).}  For any two leases held by different proposers, one lease's expiry lies in the past cone of the other's acquisition.
 
@@ -253,7 +253,7 @@ An acceptor that restarts has forgotten every promise it made and every lease it
 \]
 A \code{Prepare} that arrives during the quarantine needs no such argument, since the acceptor does not answer it.
 
-With imperfect clocks, let $r_{\min} = 1-\rho_{\max}$ and $r_{\max} = 1+\rho_{\max}$, for $0 \leq \rho_{\max} < 1$, bound each clock's rate against its own proper time; containment and quarantine then require, respectively,
+With imperfect clocks, each clock's rate against its own proper time lies between $r_{\min} = 1-\rho_{\max}$ and $r_{\max} = 1+\rho_{\max}$, for $0 \leq \rho_{\max} < 1$; containment and quarantine then require, respectively,
 \[
   k\,D_P\,r_{\max} \leq D_A\,r_{\min},
   \qquad
